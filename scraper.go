@@ -6,7 +6,13 @@ import (
 	"github.com/gocolly/colly"
 )
 
+type Product struct {
+	Url, Image, Name, Price string
+}
+
 func main() {
+
+	var products []Product
 
 	c := colly.NewCollector(
 		colly.AllowedDomains("www.scrapingcourse.com"),
@@ -24,8 +30,17 @@ func main() {
 		fmt.Println("Page visited: ", r.Request.URL)
 	})
 
-	c.OnHTML("a", func(e *colly.HTMLElement) {
-		fmt.Println("%v", e.Attr("href"))
+	c.OnHTML("li.product", func(e *colly.HTMLElement) {
+
+		product := Product{}
+
+		product.Url = e.ChildAttr("a", "href")
+		product.Image = e.ChildAttr("img", "src")
+		product.Name = e.ChildText(".product-name")
+		product.Price = e.ChildText(".price")
+
+		products = append(products, product)
+
 	})
 
 	c.OnScraped(func(r *colly.Response) {
