@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"sync"
 
 	"github.com/gocolly/colly"
 )
@@ -16,6 +17,8 @@ type Product struct {
 func main() {
 
 	var products []Product
+
+	var visitedUrls sync.Map
 
 	c := colly.NewCollector(
 		colly.AllowedDomains("www.scrapingcourse.com"),
@@ -44,6 +47,17 @@ func main() {
 
 		products = append(products, product)
 
+	})
+
+	c.OnHTML("a.next", func(e *colly.HTMLElement) {
+
+		nextPage := e.Attr("href")
+
+		if _, found := visitedUrls.Load(nextPage); !found {
+			fmt.Println("scraping:", nextPage)
+			visitedUrls.Store(nextPage, struct{}{})
+			e.Request.Visit(nextPage)
+		}
 	})
 
 	c.OnScraped(func(r *colly.Response) {
